@@ -1,0 +1,388 @@
+@startuml Smart City Automation System - Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #1a1a2e
+skinparam class {
+    BackgroundColor #16162a
+    BorderColor #6c5ce7
+    ArrowColor #a29bfe
+    FontColor #ffffff
+}
+skinparam note {
+    BackgroundColor #252545
+    BorderColor #6c5ce7
+    FontColor #ffffff
+}
+
+title Smart City Automation System - Class Diagram
+
+package "Design Patterns" <<Frame>> #252545 {
+    
+    ' ==================== Singleton Pattern ====================
+    package "Singleton" <<Rectangle>> #1a1a2e {
+        class CityController <<Singleton>> {
+            - _instance: CityController
+            - _lock: Lock
+            - _devices: Dict[str, Device]
+            - _command_history: List[dict]
+            - _stats: dict
+            --
+            + get_instance(): CityController
+            + register_device(device: Device): bool
+            + execute_command(command: Command): dict
+            + get_all_devices(): List[dict]
+            + get_system_stats(): dict
+            + activate_device(device_id: str): dict
+            + deactivate_device(device_id: str): dict
+        }
+    }
+    
+    ' ==================== Command Pattern ====================
+    package "Command" <<Rectangle>> #1a1a2e {
+        interface Command <<interface>> {
+            + execute(): dict
+            + undo(): dict
+            + get_description(): str
+        }
+        
+        class LightOnCommand {
+            - _controller: CityController
+            - _device_id: str
+            - _brightness: int
+            + execute(): dict
+            + undo(): dict
+        }
+        
+        class LightOffCommand {
+            - _controller: CityController
+            - _device_id: str
+            + execute(): dict
+            + undo(): dict
+        }
+        
+        class TrafficGreenCommand {
+            - _controller: CityController
+            - _device_id: str
+            + execute(): dict
+            + undo(): dict
+        }
+        
+        class TrafficRedCommand {
+            - _controller: CityController
+            - _device_id: str
+            + execute(): dict
+            + undo(): dict
+        }
+        
+        class ProcessPaymentCommand {
+            - _banking: BankingController
+            - _resident_id: str
+            - _amount: float
+            + execute(): dict
+            + undo(): dict
+        }
+        
+        class CommandInvoker {
+            - _history: List
+            - _undo_stack: List
+            + execute(command: Command): dict
+            + undo(): dict
+            + get_history(): List
+        }
+    }
+    
+    ' ==================== Observer Pattern ====================
+    package "Observer" <<Rectangle>> #1a1a2e {
+        interface Observer <<interface>> {
+            + update(notification: dict): void
+            + get_type(): str
+        }
+        
+        class NotificationService <<Subject>> {
+            - _observers: List[Observer]
+            - _notifications: List[dict]
+            - _security_alerts: List[dict]
+            + attach(observer: Observer): void
+            + detach(observer: Observer): void
+            + notify(message: str, type: str): dict
+            + get_recent_notifications(): List[dict]
+            + get_security_alerts(): List[dict]
+        }
+        
+        class SecurityObserver {
+            - _alerts: List[dict]
+            + update(notification: dict): void
+            + get_type(): str
+            + get_alerts(): List[dict]
+        }
+        
+        class TransactionObserver {
+            - _notifications: List[dict]
+            + update(notification: dict): void
+            + get_type(): str
+        }
+        
+        class EmergencyObserver {
+            - _emergencies: List[dict]
+            + update(notification: dict): void
+            + get_type(): str
+        }
+    }
+    
+    ' ==================== Adapter Pattern ====================
+    package "Adapter" <<Rectangle>> #1a1a2e {
+        interface CryptoPaymentAdapter <<interface>> {
+            + process_payment(amount: float, currency: str): dict
+            + get_exchange_rate(fiat_currency: str): float
+            + validate_address(address: str): bool
+            + get_network_fee(): float
+        }
+        
+        class BitcoinAdapter {
+            - _exchange_rate: float
+            - _network_fee: float
+            + process_payment(amount: float, currency: str): dict
+            + get_exchange_rate(fiat_currency: str): float
+            + validate_address(address: str): bool
+        }
+        
+        class EthereumAdapter {
+            - _exchange_rate: float
+            - _gas_price: int
+            + process_payment(amount: float, currency: str): dict
+            + get_exchange_rate(fiat_currency: str): float
+            + validate_address(address: str): bool
+        }
+        
+        class CryptoPaymentFactory {
+            + {static} get_adapter(crypto_type: str): CryptoPaymentAdapter
+        }
+    }
+    
+    ' ==================== Template Method Pattern ====================
+    package "Template Method" <<Rectangle>> #1a1a2e {
+        abstract class DailyRoutineTemplate <<abstract>> {
+            # _controller: CityController
+            # _log: List[Dict]
+            + execute(): dict
+            # prepare(): void
+            # {abstract} execute_main_operations(): void
+            # verify(): bool
+            # cleanup(): void
+            # notify_completion(): void
+            # {abstract} get_name(): str
+        }
+        
+        class SunriseRoutine {
+            - _active_lights: List[str]
+            # prepare(): void
+            # execute_main_operations(): void
+            # verify(): bool
+            + get_name(): str
+        }
+        
+        class SunsetRoutine {
+            - _lights_to_activate: List[str]
+            # prepare(): void
+            # execute_main_operations(): void
+            # verify(): bool
+            + get_name(): str
+        }
+        
+        class EnergyOptimizationRoutine {
+            - _devices: List
+            - _optimizations: List
+            # execute_main_operations(): void
+            + get_name(): str
+        }
+    }
+}
+
+' ==================== Models ====================
+package "Models" <<Frame>> #252545 {
+    class Resident {
+        + resident_id: str
+        + name: str
+        + email: str
+        + role: str
+        + registered_devices: List[str]
+        + balance: float
+        + mfa_enabled: bool
+        --
+        + add_device(device_id: str): bool
+        + remove_device(device_id: str): bool
+        + update_balance(amount: float): bool
+        + has_permission(permission: str): bool
+        + to_dict(): dict
+    }
+    
+    abstract class Device <<abstract>> {
+        + device_id: str
+        + name: str
+        + device_type: DeviceType
+        + status: DeviceStatus
+        + location: str
+        --
+        + {abstract} activate(): bool
+        + {abstract} deactivate(): bool
+        + {abstract} get_status_info(): dict
+        + update_status(status: DeviceStatus): void
+        + to_dict(): dict
+    }
+    
+    class StreetLight {
+        + brightness: int
+        + auto_mode: bool
+        + activate(): bool
+        + deactivate(): bool
+        + set_brightness(level: int): bool
+    }
+    
+    class TrafficSignal {
+        + current_signal: str
+        + cycle_duration: int
+        + activate(): bool
+        + deactivate(): bool
+        + set_signal(signal: str): bool
+    }
+    
+    class SecurityCamera {
+        + recording: bool
+        + motion_detection: bool
+        + resolution: str
+        + activate(): bool
+        + deactivate(): bool
+        + toggle_motion_detection(): bool
+    }
+    
+    class Transaction {
+        + transaction_id: str
+        + resident_id: str
+        + amount: float
+        + currency: str
+        + transaction_type: TransactionType
+        + status: TransactionStatus
+        + hash: str
+        + fee: float
+        --
+        + complete(): bool
+        + fail(reason: str): bool
+        + refund(): bool
+        + get_total(): float
+        + to_dict(): dict
+    }
+}
+
+' ==================== Controllers ====================
+package "Controllers" <<Frame>> #252545 {
+    class BankingController {
+        - _transactions: List[Transaction]
+        - _balances: Dict[str, float]
+        - _crypto_adapters: Dict[str, CryptoPaymentAdapter]
+        - _fee_rates: dict
+        --
+        + process_payment(...): dict
+        + get_balance(resident_id: str): dict
+        + add_funds(resident_id: str, amount: float): dict
+        + get_recent_transactions(): List[dict]
+        + refund_transaction(transaction_id: str): dict
+    }
+}
+
+' ==================== Security ====================
+package "Security" <<Frame>> #252545 {
+    class AuthService {
+        - _users: Dict[str, dict]
+        - _sessions: Dict[str, dict]
+        - _role_permissions: Dict[UserRole, List]
+        --
+        + register_user(...): dict
+        + authenticate(user_id: str, password: str): dict
+        + verify_mfa(user_id: str, code: str): dict
+        + validate_session(token: str): dict
+        + has_permission(user_id: str, permission: str): bool
+        + enable_mfa(user_id: str): dict
+    }
+    
+    class EncryptionService {
+        - _master_key: bytes
+        + generate_key(length: int): bytes
+        + generate_token(length: int): str
+        + hash_data(data: str): str
+        + encrypt(plaintext: str): str
+        + decrypt(ciphertext: str): str
+    }
+}
+
+' ==================== Relationships ====================
+
+' Inheritance
+Device <|-- StreetLight
+Device <|-- TrafficSignal
+Device <|-- SecurityCamera
+
+DailyRoutineTemplate <|-- SunriseRoutine
+DailyRoutineTemplate <|-- SunsetRoutine
+DailyRoutineTemplate <|-- EnergyOptimizationRoutine
+
+Command <|.. LightOnCommand
+Command <|.. LightOffCommand
+Command <|.. TrafficGreenCommand
+Command <|.. TrafficRedCommand
+Command <|.. ProcessPaymentCommand
+
+Observer <|.. SecurityObserver
+Observer <|.. TransactionObserver
+Observer <|.. EmergencyObserver
+
+CryptoPaymentAdapter <|.. BitcoinAdapter
+CryptoPaymentAdapter <|.. EthereumAdapter
+
+' Associations
+CityController "1" o-- "*" Device : manages
+CityController "1" *-- "1" CommandInvoker : uses
+CityController ..> Command : executes
+
+NotificationService "1" o-- "*" Observer : notifies
+
+BankingController "1" *-- "*" Transaction : creates
+BankingController "1" o-- "*" CryptoPaymentAdapter : uses
+
+Resident "1" -- "*" Transaction : makes
+Resident "1" -- "*" Device : controls
+
+DailyRoutineTemplate --> CityController : uses
+
+CryptoPaymentFactory ..> CryptoPaymentAdapter : creates
+
+note right of CityController
+    <b>Singleton Pattern</b>
+    Ensures only one instance
+    manages all city infrastructure
+end note
+
+note right of Command
+    <b>Command Pattern</b>
+    Encapsulates operations
+    as objects for undo/redo
+end note
+
+note right of Observer
+    <b>Observer Pattern</b>
+    Subscribers receive
+    notifications automatically
+end note
+
+note right of CryptoPaymentAdapter
+    <b>Adapter Pattern</b>
+    Unified interface for
+    multiple cryptocurrencies
+end note
+
+note right of DailyRoutineTemplate
+    <b>Template Method Pattern</b>
+    Defines algorithm skeleton,
+    subclasses override steps
+end note
+
+@enduml

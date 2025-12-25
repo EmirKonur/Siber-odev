@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Banking - Smart City{% endblock %}
+{% block nav_banking %}active{% endblock %}
+{% block page_title %}Digital Banking{% endblock %}
+
+{% block content %}
+<div class="banking-grid">
+    <!-- Balance Card -->
+    <div class="card balance-card">
+        <div class="balance-header">
+            <span class="balance-label">Available Balance</span>
+            <span class="balance-amount">${{ "%.2f"|format(balance.balance) }}</span>
+        </div>
+        <div class="balance-actions">
+            <button class="btn btn-outline" onclick="showAddFunds()">+ Add Funds</button>
+            <button class="btn btn-primary" onclick="showPaymentModal()">Make Payment</button>
+        </div>
+    </div>
+
+    <!-- Payment Methods -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Payment Methods</h3>
+        </div>
+        <div class="card-body">
+            <div class="payment-methods">
+                <div class="payment-method active">
+                    <span class="method-icon">💵</span>
+                    <span class="method-name">Fiat (USD)</span>
+                    <span class="method-badge">Default</span>
+                </div>
+                <div class="payment-method">
+                    <span class="method-icon">₿</span>
+                    <span class="method-name">Bitcoin</span>
+                    <span class="method-fee">2% fee</span>
+                </div>
+                <div class="payment-method">
+                    <span class="method-icon">Ξ</span>
+                    <span class="method-name">Ethereum</span>
+                    <span class="method-fee">1.5% fee</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Pay -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Quick Pay - City Services</h3>
+        </div>
+        <div class="card-body">
+            <div class="service-grid">
+                <button class="service-btn" onclick="payService('Parking Fee', 5)">
+                    <span class="service-icon">🅿️</span>
+                    <span class="service-name">Parking</span>
+                    <span class="service-price">$5.00</span>
+                </button>
+                <button class="service-btn" onclick="payService('Public Transport', 2.50)">
+                    <span class="service-icon">🚌</span>
+                    <span class="service-name">Transport</span>
+                    <span class="service-price">$2.50</span>
+                </button>
+                <button class="service-btn" onclick="payService('Utility Bill', 75)">
+                    <span class="service-icon">💡</span>
+                    <span class="service-name">Utilities</span>
+                    <span class="service-price">$75.00</span>
+                </button>
+                <button class="service-btn" onclick="payService('Water Bill', 45)">
+                    <span class="service-icon">💧</span>
+                    <span class="service-name">Water</span>
+                    <span class="service-price">$45.00</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="card transactions-card">
+        <div class="card-header">
+            <h3>Transaction History</h3>
+            <select class="form-select-sm" id="transactionFilter">
+                <option value="all">All Transactions</option>
+                <option value="fiat">Fiat Only</option>
+                <option value="crypto">Crypto Only</option>
+            </select>
+        </div>
+        <div class="card-body">
+            <div class="transaction-list" id="transactionList">
+                {% if transactions %}
+                {% for tx in transactions %}
+                <div class="transaction-item {{ tx.status }}">
+                    <div class="tx-icon">
+                        {% if tx.type == 'fiat' %}💵
+                        {% elif tx.type == 'bitcoin' %}₿
+                        {% elif tx.type == 'ethereum' %}Ξ
+                        {% else %}💳{% endif %}
+                    </div>
+                    <div class="tx-details">
+                        <span class="tx-description">{{ tx.description }}</span>
+                        <span class="tx-id">#{{ tx.hash }}</span>
+                    </div>
+                    <div class="tx-amount-info">
+                        <span class="tx-amount {{ 'negative' if tx.amount > 0 else 'positive' }}">
+                            -${{ "%.2f"|format(tx.total) }}
+                        </span>
+                        <span class="tx-status {{ tx.status }}">{{ tx.status }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-icon">📭</span>
+                    <p>No transactions yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Payment Form -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Custom Payment</h3>
+        </div>
+        <div class="card-body">
+            <form id="customPaymentForm" onsubmit="processCustomPayment(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <div class="input-group">
+                            <span class="input-prefix">$</span>
+                            <input type="number" id="customAmount" class="form-input" placeholder="0.00" step="0.01"
+                                min="0.01" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Method</label>
+                        <select id="customPaymentType" class="form-select">
+                            <option value="fiat">USD (No fee)</option>
+                            <option value="bitcoin">Bitcoin (2% fee)</option>
+                            <option value="ethereum">Ethereum (1.5% fee)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="customDescription" class="form-input" placeholder="Enter payment description"
+                        required>
+                </div>
+                <div class="form-summary" id="paymentSummary">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="summarySubtotal">$0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Fee:</span>
+                        <span id="summaryFee">$0.00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="summaryTotal">$0.00</span>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    Process Payment
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fee rates
+    const fees = { fiat: 0.01, bitcoin: 0.02, ethereum: 0.015 };
+
+    // Update payment summary
+    function updateSummary() {
+        const amount = parseFloat(document.getElementById('customAmount').value) || 0;
+        const type = document.getElementById('customPaymentType').value;
+        const feeRate = fees[type];
+        const fee = amount * feeRate;
+        const total = amount + fee;
+
+        document.getElementById('summarySubtotal').textContent = `$${amount.toFixed(2)}`;
+        document.getElementById('summaryFee').textContent = `$${fee.toFixed(2)}`;
+        document.getElementById('summaryTotal').textContent = `$${total.toFixed(2)}`;
+    }
+
+    document.getElementById('customAmount').addEventListener('input', updateSummary);
+    document.getElementById('customPaymentType').addEventListener('change', updateSummary);
+
+    // Process custom payment
+    async function processCustomPayment(event) {
+        event.preventDefault();
+        const amount = parseFloat(document.getElementById('customAmount').value);
+        const type = document.getElementById('customPaymentType').value;
+        const description = document.getElementById('customDescription').value;
+
+        await makePayment(amount, type, description);
+    }
+
+    // Quick service payment
+    async function payService(service, amount) {
+        await makePayment(amount, 'fiat', service);
+    }
+
+    // Make payment API call
+    async function makePayment(amount, type, description) {
+        try {
+            const response = await fetch('/api/payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount,
+                    type,
+                    currency: 'USD',
+                    description
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showToast(`Payment of $${amount.toFixed(2)} processed successfully!`, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast(data.error || 'Payment failed', 'error');
+            }
+        } catch (error) {
+            showToast('Payment processing error', 'error');
+        }
+    }
+
+    function showAddFunds() {
+        showToast('Add funds feature coming soon', 'info');
+    }
+
+    function showPaymentModal() {
+        document.getElementById('customAmount').focus();
+    }
+</script>
+{% endblock %}

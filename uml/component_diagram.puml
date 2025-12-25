@@ -1,0 +1,209 @@
+@startuml Smart City Automation System - Component Diagram
+
+skinparam backgroundColor #1a1a2e
+skinparam component {
+    BackgroundColor #16162a
+    BorderColor #6c5ce7
+    ArrowColor #a29bfe
+}
+skinparam package {
+    BackgroundColor #252545
+    BorderColor #6c5ce7
+}
+skinparam database {
+    BackgroundColor #16162a
+    BorderColor #00d9a5
+}
+skinparam cloud {
+    BackgroundColor #252545
+    BorderColor #00cec9
+}
+skinparam node {
+    BackgroundColor #252545
+    BorderColor #6c5ce7
+}
+skinparam note {
+    BackgroundColor #252545
+    BorderColor #6c5ce7
+    FontColor #ffffff
+}
+
+title Smart City Automation System - Component Diagram\nHybrid-Cloud Architecture
+
+' ==================== Client Layer ====================
+package "Client Layer" {
+    component [Web Dashboard] as WebUI
+    component [Mobile App] as MobileUI
+    component [Admin Console] as AdminUI
+}
+
+' ==================== API Layer ====================
+package "API Layer" <<Cloud>> {
+    component [Flask REST API] as API
+    component [Authentication\nMiddleware] as AuthMW
+    component [Rate Limiter] as RateLimit
+}
+
+' ==================== Application Layer ====================
+package "Application Layer" {
+    
+    package "Controllers" {
+        component [CityController\n<<Singleton>>] as CC
+        component [BankingController] as BC
+    }
+    
+    package "Services" {
+        component [NotificationService\n<<Observer>>] as NS
+        component [BankingService] as BS
+        component [AuthService] as AS
+    }
+    
+    package "Commands" {
+        component [CommandInvoker] as CI
+        component [InfrastructureCommands\n<<Command>>] as IC
+    }
+    
+    package "Routines" {
+        component [DailyRoutineTemplate\n<<Template Method>>] as RT
+        component [SunriseRoutine] as SR
+        component [SunsetRoutine] as SSR
+    }
+    
+    package "Adapters" {
+        component [CryptoPaymentAdapter\n<<Adapter>>] as CPA
+        component [BitcoinAdapter] as BTC
+        component [EthereumAdapter] as ETH
+    }
+}
+
+' ==================== Security Layer ====================
+package "Security Layer" {
+    component [EncryptionService] as ES
+    component [MFA Handler] as MFA
+    component [RBAC Manager] as RBAC
+}
+
+' ==================== Infrastructure Layer ====================
+package "IoT Infrastructure" {
+    component [Street Lights] as SL
+    component [Traffic Signals] as TS
+    component [Security Cameras] as SC
+    component [Power Meters] as PM
+    component [Water Meters] as WM
+}
+
+' ==================== Data Layer ====================
+cloud "Hybrid Cloud Storage" {
+    database "IoT Data Store\n(Timeseries)" as IODB
+    database "Transaction DB" as TDB
+    database "User DB" as UDB
+    database "Audit Logs" as ADB
+}
+
+' ==================== External Services ====================
+cloud "External Services" {
+    component [Payment Gateway] as PG
+    component [Bitcoin Network] as BTCNet
+    component [Ethereum Network] as ETHNet
+    component [SMS/Email Service] as NotifSvc
+}
+
+' ==================== Connections ====================
+
+' Client to API
+WebUI --> API : HTTPS
+MobileUI --> API : HTTPS
+AdminUI --> API : HTTPS
+
+' API Layer
+API --> AuthMW
+AuthMW --> RateLimit
+RateLimit --> CC
+RateLimit --> BC
+
+' Controllers to Services
+CC --> NS : notify events
+CC --> CI : execute commands
+BC --> BS : banking operations
+BC --> CPA : crypto payments
+
+' Command Pattern
+CI --> IC
+IC --> CC : control devices
+
+' Template Method
+RT --> SR
+RT --> SSR
+CC --> RT : execute routines
+
+' Adapter Pattern
+CPA --> BTC
+CPA --> ETH
+
+' Security
+AS --> ES : encrypt/decrypt
+AS --> MFA : verify MFA
+AS --> RBAC : check permissions
+AuthMW --> AS : authenticate
+
+' Notifications
+NS --> NotifSvc : send alerts
+
+' Infrastructure Control
+CC --> SL : control
+CC --> TS : control
+CC --> SC : control
+CC --> PM : monitor
+CC --> WM : monitor
+
+' Data Storage
+CC --> IODB : store IoT data
+BC --> TDB : store transactions
+AS --> UDB : manage users
+CC --> ADB : audit trail
+NS --> ADB : log alerts
+
+' External Payments
+BS --> PG : process fiat
+BTC --> BTCNet : process BTC
+ETH --> ETHNet : process ETH
+
+' ==================== Notes ====================
+
+note top of API
+    <b>Vercel Serverless</b>
+    Deployed as serverless
+    functions on Vercel
+end note
+
+note right of CC
+    <b>Singleton Pattern</b>
+    Single instance manages
+    all infrastructure
+end note
+
+note right of NS
+    <b>Observer Pattern</b>
+    Notifies all subscribers
+    of system events
+end note
+
+note right of CPA
+    <b>Adapter Pattern</b>
+    Unified interface for
+    multiple cryptocurrencies
+end note
+
+note right of RT
+    <b>Template Method Pattern</b>
+    Defines routine algorithm,
+    subclasses implement steps
+end note
+
+note bottom of IODB
+    <b>Hybrid Cloud</b>
+    Centralized storage
+    for IoT telemetry
+end note
+
+@enduml

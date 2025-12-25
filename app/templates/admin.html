@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Smart City{% endblock %}
+{% block nav_admin %}active{% endblock %}
+{% block page_title %}Admin Panel{% endblock %}
+
+{% block content %}
+<div class="admin-grid">
+    <!-- System Status -->
+    <div class="card status-card">
+        <div class="card-header">
+            <h3>System Status</h3>
+            <span class="status-indicator online">● Online</span>
+        </div>
+        <div class="card-body">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-value">{{ stats.total_devices }}</span>
+                    <span class="stat-label">Total Devices</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value">{{ stats.active_devices }}</span>
+                    <span class="stat-label">Active Devices</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value">{{ stats.total_commands_executed }}</span>
+                    <span class="stat-label">Commands Executed</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value">{{ stats.uptime_formatted }}</span>
+                    <span class="stat-label">Uptime</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Management -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Device Management</h3>
+            <div class="header-actions">
+                <button class="btn btn-sm btn-primary" onclick="refreshDevices()">Refresh</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Device ID</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for device in devices %}
+                    <tr data-id="{{ device.device_id }}">
+                        <td><code>{{ device.device_id }}</code></td>
+                        <td>{{ device.name }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ device.type }}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge {{ 'active' if device.status == 'active' else 'inactive' }}">
+                                {{ device.status }}
+                            </span>
+                        </td>
+                        <td>{{ device.last_updated }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-xs btn-success"
+                                    onclick="controlDevice('{{ device.device_id }}', 'on')">
+                                    On
+                                </button>
+                                <button class="btn btn-xs btn-danger"
+                                    onclick="controlDevice('{{ device.device_id }}', 'off')">
+                                    Off
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Routine Management -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Automated Routines</h3>
+        </div>
+        <div class="card-body">
+            <div class="routine-grid">
+                <div class="routine-card">
+                    <div class="routine-icon">🌅</div>
+                    <h4>Sunrise Routine</h4>
+                    <p>Deactivates street lights and optimizes traffic for morning rush</p>
+                    <button class="btn btn-primary btn-block" onclick="executeRoutine('sunrise')">
+                        Execute Now
+                    </button>
+                </div>
+                <div class="routine-card">
+                    <div class="routine-icon">🌆</div>
+                    <h4>Sunset Routine</h4>
+                    <p>Activates street lights and adjusts traffic for evening patterns</p>
+                    <button class="btn btn-primary btn-block" onclick="executeRoutine('sunset')">
+                        Execute Now
+                    </button>
+                </div>
+                <div class="routine-card">
+                    <div class="routine-icon">⚡</div>
+                    <h4>Energy Optimization</h4>
+                    <p>Analyzes and optimizes device power consumption</p>
+                    <button class="btn btn-secondary btn-block" disabled>
+                        Scheduled
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Traffic Control -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Traffic Signal Control</h3>
+        </div>
+        <div class="card-body">
+            <div class="traffic-controls">
+                {% for device in devices %}
+                {% if device.type == 'TrafficSignal' %}
+                <div class="traffic-signal-control">
+                    <h4>{{ device.name }}</h4>
+                    <div class="signal-lights">
+                        <button
+                            class="signal-btn red {{ 'active' if device.metadata.get('current_signal') == 'red' else '' }}"
+                            onclick="setTrafficSignal('{{ device.device_id }}', 'red')">🔴</button>
+                        <button class="signal-btn yellow"
+                            onclick="setTrafficSignal('{{ device.device_id }}', 'yellow')">🟡</button>
+                        <button
+                            class="signal-btn green {{ 'active' if device.metadata.get('current_signal') == 'green' else '' }}"
+                            onclick="setTrafficSignal('{{ device.device_id }}', 'green')">🟢</button>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Command History -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Recent Activity</h3>
+        </div>
+        <div class="card-body">
+            <div class="activity-log" id="activityLog">
+                <div class="activity-item">
+                    <span class="activity-icon">⚙️</span>
+                    <div class="activity-details">
+                        <span class="activity-message">System initialized</span>
+                        <span class="activity-time">{{ stats.uptime_formatted }} ago</span>
+                    </div>
+                </div>
+                {% if stats.last_routine %}
+                <div class="activity-item">
+                    <span class="activity-icon">🔄</span>
+                    <div class="activity-details">
+                        <span class="activity-message">{{ stats.last_routine.name }} executed</span>
+                        <span class="activity-time">{{ stats.last_routine.executed_at }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function controlDevice(deviceId, action) {
+        try {
+            const response = await fetch(`/api/device/${deviceId}/control`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast(`Device ${action} successful`, 'success');
+                setTimeout(() => location.reload(), 500);
+            }
+        } catch (error) {
+            showToast('Action failed', 'error');
+        }
+    }
+
+    async function setTrafficSignal(deviceId, signal) {
+        await controlDevice(deviceId, signal);
+    }
+
+    async function executeRoutine(routineType) {
+        try {
+            const response = await fetch(`/api/routine/${routineType}`, { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                showToast(`${routineType} routine executed`, 'success');
+                setTimeout(() => location.reload(), 500);
+            }
+        } catch (error) {
+            showToast('Routine failed', 'error');
+        }
+    }
+
+    function refreshDevices() {
+        location.reload();
+    }
+</script>
+{% endblock %}

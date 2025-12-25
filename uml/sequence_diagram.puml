@@ -1,0 +1,93 @@
+@startuml Smart City Automation System - Sequence Diagrams
+
+skinparam backgroundColor #1a1a2e
+skinparam sequence {
+    ParticipantBackgroundColor #16162a
+    ParticipantBorderColor #6c5ce7
+    ArrowColor #a29bfe
+    LifeLineBorderColor #6c5ce7
+    LifeLineBackgroundColor #252545
+}
+skinparam note {
+    BackgroundColor #252545
+    BorderColor #6c5ce7
+    FontColor #ffffff
+}
+
+title Payment Processing Flow
+
+actor Resident as R #6c5ce7
+participant "Web Interface" as UI #16162a
+participant "Flask API" as API #16162a
+participant "BankingController" as BC #16162a
+participant "CryptoAdapter" as CA #16162a
+participant "NotificationService" as NS #16162a
+participant "TransactionObserver" as TO #16162a
+participant "SecurityObserver" as SO #16162a
+
+== Payment Request ==
+
+R -> UI: Enter payment details\n(amount, type, description)
+activate UI
+
+UI -> API: POST /api/payment\n{amount, type, currency}
+activate API
+
+API -> BC: process_payment(resident_id, amount,\ncurrency, type, description)
+activate BC
+
+alt Cryptocurrency Payment
+    BC -> CA: process_payment(amount, currency)
+    activate CA
+    CA -> CA: validate_address()
+    CA -> CA: calculate_gas_fee()
+    CA --> BC: {success, tx_hash, fee}
+    deactivate CA
+end
+
+BC -> BC: check balance
+alt Insufficient Funds
+    BC --> API: {success: false, error: "Insufficient funds"}
+    API --> UI: 400 Bad Request
+    UI --> R: Show error message
+else Sufficient Funds
+    BC -> BC: create Transaction
+    BC -> BC: deduct balance
+    BC -> BC: transaction.complete()
+    
+    BC --> API: {success: true, transaction, new_balance}
+    deactivate BC
+end
+
+== Notification Flow (Observer Pattern) ==
+
+API -> NS: notify(message, "transaction")
+activate NS
+
+NS -> NS: create notification object
+NS -> NS: add to notifications list
+
+loop for each Observer
+    NS -> TO: update(notification)
+    activate TO
+    TO -> TO: process transaction notification
+    TO --> NS: 
+    deactivate TO
+    
+    NS -> SO: update(notification)
+    activate SO
+    SO -> SO: check if security-related
+    SO --> NS: 
+    deactivate SO
+end
+
+NS --> API: notification created
+deactivate NS
+
+API --> UI: 200 OK\n{success, transaction, new_balance}
+deactivate API
+
+UI --> R: Show success message\n+ updated balance
+deactivate UI
+
+@enduml

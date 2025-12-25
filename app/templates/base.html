@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart City Dashboard{% endblock %}</title>
+    <meta name="description" content="Smart City Automation System with Digital Banking Integration">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🏙️</span>
+                    <span class="logo-text">SmartCity</span>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item {% block nav_dashboard %}{% endblock %}">
+                    <a href="/" class="nav-link">
+                        <span class="nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item {% block nav_admin %}{% endblock %}">
+                    <a href="/admin" class="nav-link">
+                        <span class="nav-icon">⚙️</span>
+                        <span>Admin Panel</span>
+                    </a>
+                </li>
+                <li class="nav-item {% block nav_banking %}{% endblock %}">
+                    <a href="/banking" class="nav-link">
+                        <span class="nav-icon">💳</span>
+                        <span>Banking</span>
+                    </a>
+                </li>
+                <li class="nav-item {% block nav_security %}{% endblock %}">
+                    <a href="/security" class="nav-link">
+                        <span class="nav-icon">🔒</span>
+                        <span>Security</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-details">
+                        <span class="user-name">{{ resident.name if resident else 'Guest' }}</span>
+                        <span class="user-role">{{ resident.role if resident else 'visitor' }}</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                <div class="header-actions">
+                    <button class="btn btn-icon" id="notificationBtn">
+                        <span class="notification-badge">3</span>
+                        🔔
+                    </button>
+                    <button class="btn btn-primary" id="refreshBtn">Refresh</button>
+                </div>
+            </header>
+            
+            <div class="content-body">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    
+    <!-- Notification Toast -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <script src="/static/js/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

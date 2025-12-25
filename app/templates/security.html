@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Security Center - Smart City{% endblock %}
+{% block nav_security %}active{% endblock %}
+{% block page_title %}Security Center{% endblock %}
+
+{% block content %}
+<div class="security-grid">
+    <!-- Security Status -->
+    <div class="card security-status-card">
+        <div class="security-header">
+            <div class="security-icon secure">🛡️</div>
+            <div class="security-info">
+                <h2>System Secure</h2>
+                <p>All security protocols are active</p>
+            </div>
+        </div>
+        <div class="security-metrics">
+            <div class="metric">
+                <span class="metric-value">{{ alerts|length }}</span>
+                <span class="metric-label">Active Alerts</span>
+            </div>
+            <div class="metric">
+                <span class="metric-value">{{ cameras|length }}</span>
+                <span class="metric-label">Cameras Online</span>
+            </div>
+            <div class="metric">
+                <span class="metric-value">100%</span>
+                <span class="metric-label">Uptime</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Features -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Security Features</h3>
+        </div>
+        <div class="card-body">
+            <div class="feature-list">
+                <div class="feature-item active">
+                    <span class="feature-icon">🔐</span>
+                    <div class="feature-info">
+                        <h4>Multi-Factor Authentication</h4>
+                        <p>Two-step verification for all admin actions</p>
+                    </div>
+                    <span class="feature-status">Active</span>
+                </div>
+                <div class="feature-item active">
+                    <span class="feature-icon">👥</span>
+                    <div class="feature-info">
+                        <h4>Role-Based Access Control</h4>
+                        <p>Permissions based on user roles</p>
+                    </div>
+                    <span class="feature-status">Active</span>
+                </div>
+                <div class="feature-item active">
+                    <span class="feature-icon">🔒</span>
+                    <div class="feature-info">
+                        <h4>Quantum-Resistant Encryption</h4>
+                        <p>Advanced encryption for all data</p>
+                    </div>
+                    <span class="feature-status">Active</span>
+                </div>
+                <div class="feature-item active">
+                    <span class="feature-icon">🛡️</span>
+                    <div class="feature-info">
+                        <h4>Dynamic Countermeasures</h4>
+                        <p>Automated threat response system</p>
+                    </div>
+                    <span class="feature-status">Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Feeds -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Security Cameras</h3>
+        </div>
+        <div class="card-body">
+            <div class="camera-grid">
+                {% for camera in cameras %}
+                <div class="camera-feed">
+                    <div class="camera-preview">
+                        <div class="camera-placeholder">
+                            <span>📹</span>
+                            <span>Live Feed</span>
+                        </div>
+                        <span class="recording-indicator {{ 'active' if camera.metadata.get('recording') else '' }}">
+                            ● REC
+                        </span>
+                    </div>
+                    <div class="camera-info">
+                        <span class="camera-name">{{ camera.name }}</span>
+                        <span class="camera-status {{ camera.status }}">{{ camera.status }}</span>
+                    </div>
+                    <div class="camera-controls">
+                        <button class="btn btn-sm" onclick="toggleRecording('{{ camera.device_id }}')">
+                            {{ 'Stop' if camera.metadata.get('recording') else 'Record' }}
+                        </button>
+                        <button class="btn btn-sm btn-outline"
+                            onclick="toggleMotionDetection('{{ camera.device_id }}')">
+                            Motion {{ 'On' if camera.metadata.get('motion_detection') else 'Off' }}
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>No cameras configured</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Alerts -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Security Alerts</h3>
+            <select class="form-select-sm" id="alertFilter">
+                <option value="all">All Alerts</option>
+                <option value="critical">Critical Only</option>
+                <option value="warning">Warnings</option>
+            </select>
+        </div>
+        <div class="card-body">
+            <div class="alert-list" id="alertList">
+                {% if alerts %}
+                {% for alert in alerts %}
+                <div class="alert-item {{ alert.severity|default('medium') }}">
+                    <div class="alert-icon">
+                        {% if alert.type == 'emergency' %}🚨
+                        {% elif alert.severity == 'high' %}⚠️
+                        {% else %}ℹ️{% endif %}
+                    </div>
+                    <div class="alert-content">
+                        <span class="alert-message">{{ alert.message }}</span>
+                        <span class="alert-time">{{ alert.timestamp }}</span>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="btn btn-xs" onclick="acknowledgeAlert({{ alert.id }})">
+                            Acknowledge
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state success">
+                    <span class="empty-icon">✅</span>
+                    <p>No security alerts</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Emergency Actions</h3>
+        </div>
+        <div class="card-body">
+            <div class="emergency-grid">
+                <button class="emergency-btn" onclick="triggerEmergency('lockdown')">
+                    <span class="emergency-icon">🔒</span>
+                    <span>Lockdown Mode</span>
+                </button>
+                <button class="emergency-btn" onclick="triggerEmergency('alert')">
+                    <span class="emergency-icon">📢</span>
+                    <span>Public Alert</span>
+                </button>
+                <button class="emergency-btn danger" onclick="triggerEmergency('emergency')">
+                    <span class="emergency-icon">🚨</span>
+                    <span>Emergency Services</span>
+                </button>
+            </div>
+            <p class="emergency-note">
+                ⚠️ Emergency actions will notify public safety authorities
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function toggleRecording(cameraId) {
+        await controlDevice(cameraId, 'on');
+    }
+
+    async function toggleMotionDetection(cameraId) {
+        showToast('Motion detection toggled', 'info');
+    }
+
+    async function controlDevice(deviceId, action) {
+        try {
+            const response = await fetch(`/api/device/${deviceId}/control`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast('Camera updated', 'success');
+                setTimeout(() => location.reload(), 500);
+            }
+        } catch (error) {
+            showToast('Action failed', 'error');
+        }
+    }
+
+    function acknowledgeAlert(alertId) {
+        showToast(`Alert #${alertId} acknowledged`, 'success');
+    }
+
+    function triggerEmergency(type) {
+        if (confirm(`Are you sure you want to trigger ${type} mode? This will notify authorities.`)) {
+            showToast(`${type} mode activated`, 'warning');
+        }
+    }
+</script>
+{% endblock %}

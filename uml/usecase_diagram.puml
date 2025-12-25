@@ -1,0 +1,194 @@
+@startuml Smart City Automation System - Use Case Diagram
+
+skinparam backgroundColor #1a1a2e
+skinparam usecase {
+    BackgroundColor #16162a
+    BorderColor #6c5ce7
+    ArrowColor #a29bfe
+}
+skinparam actor {
+    BackgroundColor #6c5ce7
+    BorderColor #a29bfe
+}
+skinparam rectangle {
+    BackgroundColor #252545
+    BorderColor #6c5ce7
+}
+skinparam note {
+    BackgroundColor #252545
+    BorderColor #6c5ce7
+    FontColor #ffffff
+}
+
+title Smart City Automation System - Use Case Diagram
+
+left to right direction
+
+' ==================== Actors ====================
+actor "Resident" as Resident #6c5ce7
+actor "City Admin" as Admin #00d9a5
+actor "Public Safety\nAuthority" as Authority #ffc107
+actor "Utility Service" as Utility #00cec9
+
+' Secondary system actors
+actor "BankingService" as BankingService <<system>> #a29bfe
+actor "CityController" as CityController <<system>> #a29bfe
+
+' ==================== System Boundary ====================
+rectangle "Smart City Automation System" {
+    
+    ' Resident use cases
+    package "Resident Services" {
+        usecase "View Dashboard" as UC1
+        usecase "Control Home Devices" as UC2
+        usecase "View City Services" as UC3
+        usecase "Receive Notifications" as UC4
+        usecase "Make Payment" as UC5
+        usecase "Pay with Fiat" as UC5a
+        usecase "Pay with Crypto" as UC5b
+        usecase "Enable MFA" as UC6
+    }
+    
+    ' Admin use cases
+    package "City Management" {
+        usecase "Control Infrastructure" as UC10
+        usecase "Manage Street Lights" as UC11
+        usecase "Manage Traffic Signals" as UC12
+        usecase "Manage Security Cameras" as UC13
+        usecase "Execute Daily Routines" as UC14
+        usecase "Run Sunrise Routine" as UC14a
+        usecase "Run Sunset Routine" as UC14b
+        usecase "View Analytics" as UC15
+        usecase "Manage Users" as UC16
+    }
+    
+    ' Security use cases
+    package "Security Services" {
+        usecase "Monitor Security Alerts" as UC20
+        usecase "Receive Emergency Alerts" as UC21
+        usecase "Trigger Lockdown" as UC22
+        usecase "View Security Logs" as UC23
+    }
+    
+    ' Utility use cases
+    package "Utility Monitoring" {
+        usecase "Monitor Power Usage" as UC30
+        usecase "Monitor Water Usage" as UC31
+        usecase "Generate Usage Reports" as UC32
+    }
+    
+    ' System use cases
+    package "Banking Operations" {
+        usecase "Process Transaction" as UC40
+        usecase "Send Transaction Notification" as UC41
+        usecase "Validate Crypto Payment" as UC42
+    }
+    
+    package "Infrastructure Control" {
+        usecase "Execute Command" as UC50
+        usecase "Log Command History" as UC51
+        usecase "Coordinate Routines" as UC52
+    }
+}
+
+' ==================== Associations ====================
+
+' Resident associations
+Resident --> UC1
+Resident --> UC2
+Resident --> UC3
+Resident --> UC4
+Resident --> UC5
+Resident --> UC6
+
+' Admin associations
+Admin --> UC1
+Admin --> UC10
+Admin --> UC14
+Admin --> UC15
+Admin --> UC16
+Admin --> UC20
+
+' Authority associations
+Authority --> UC20
+Authority --> UC21
+Authority --> UC22
+Authority --> UC23
+
+' Utility associations
+Utility --> UC30
+Utility --> UC31
+Utility --> UC32
+
+' System actor associations
+BankingService --> UC40
+BankingService --> UC41
+BankingService --> UC42
+
+CityController --> UC50
+CityController --> UC51
+CityController --> UC52
+
+' ==================== Include/Extend Relationships ====================
+
+' Payment includes
+UC5 ..> UC40 : <<include>>
+UC5a ..|> UC5 : <<extend>>
+UC5b ..|> UC5 : <<extend>>
+UC5b ..> UC42 : <<include>>
+UC40 ..> UC41 : <<include>>
+
+' Infrastructure control includes
+UC10 ..> UC50 : <<include>>
+UC11 ..|> UC10 : <<extend>>
+UC12 ..|> UC10 : <<extend>>
+UC13 ..|> UC10 : <<extend>>
+UC50 ..> UC51 : <<include>>
+
+' Routine includes
+UC14 ..> UC52 : <<include>>
+UC14a ..|> UC14 : <<extend>>
+UC14b ..|> UC14 : <<extend>>
+
+' Security includes
+UC21 ..> UC4 : <<include>>
+UC22 ..> UC21 : <<include>>
+
+' ==================== Notes ====================
+
+note right of Resident
+    <b>Primary User</b>
+    Can control home devices,
+    view services, and make
+    payments (fiat or crypto)
+end note
+
+note right of Admin
+    <b>City Administrator</b>
+    Full control over city
+    infrastructure and
+    user management
+end note
+
+note left of Authority
+    <b>Public Safety</b>
+    Receives emergency
+    alerts and can
+    trigger lockdowns
+end note
+
+note bottom of BankingService
+    <b>Banking System</b>
+    Processes fiat and
+    cryptocurrency payments
+    using Adapter pattern
+end note
+
+note bottom of CityController
+    <b>City Controller (Singleton)</b>
+    Central management of
+    all infrastructure devices
+    and routines
+end note
+
+@enduml
